@@ -1,0 +1,6 @@
+<resources>
+	<color name="background">#384654</color>
+	<color name="button">#4F5D6B</color>
+	<color name="lit">#EDA151</color>
+	<color name="label_colour">#000000</color>
+</resources>
