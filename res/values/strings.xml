@@ -2,6 +2,10 @@
 <resources>
 
     <string name="hello">Hello World, MonomeActivity!</string>
-    <string name="app_name">Androme3</string>
+    <string name="app_name">Androme</string>
+    <string name="transmitTitle">Address to transmit to</string>
+    <string name="transmitPortTitle">Port to transmit to</string>
+    <string name="listenPortTitle">Port to listen on</string>
+    <string name="titlePrefs">Preferences</string>
 
 </resources>

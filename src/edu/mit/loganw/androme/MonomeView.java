@@ -11,6 +11,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Paint.Style;
 import android.view.View;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.os.Handler;
@@ -20,11 +21,10 @@ import android.view.MotionEvent;
 
 import de.sciss.net.OSCMessage;
 import de.sciss.net.OSCClient;
+import de.sciss.net.OSCServer;
 
 public class MonomeView extends View{
 	Boolean[][] gridLit;
-	
-	private int runMode;
 	
 	int cellSize = 56;
 	
@@ -34,30 +34,24 @@ public class MonomeView extends View{
 	public static final int GRID_HEIGHT = 8;
 	
 	public static final String TAG = "MonomeView";
-		
-	OSCClient c;
-	
+			
 	// dummy IP address
 	String ipAddress = "127.0.0.1";
+	
+	Activity superActivity;
 	
 	public MonomeView(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		initializeMonomeGrid();
 		
 		// initialize the port for sending OSC messages
-		try {
-			c = OSCClient.newUsing( OSCClient.UDP );
-			c.setTarget( new InetSocketAddress ("18.224.0.65", 8000));
-			c.start();
-		} catch (IOException e) {
-			e.printStackTrace();
-			Log.e(TAG, "Could not initialize OSC client");
-		}
 	}
 	
-	public void initializeMonomeGrid() {
-		runMode = RUNNING;
-		
+	public void setActivity(Activity activity) {
+		superActivity = activity;
+	}
+	
+	public void initializeMonomeGrid() {		
 		gridLit = new Boolean[8][8];
 		
 		resetGrid(false);
@@ -75,13 +69,6 @@ public class MonomeView extends View{
 		gridLit[xPos][yPos] = (state == 1) ? true : false;
 	}
 	
-	// stop listeners/animation  when app looses focus
-	public void pauseMonomeGrid(){
-
-		// pause the animation thread
-		runMode = PAUSE;
-	}
-
 	// drawing the Monome view
 	protected void onDraw(Canvas canvas) {
 		Paint background = new Paint();
@@ -171,15 +158,24 @@ public class MonomeView extends View{
 	}
 	
 	class SendOSCMessage extends AsyncTask<OSCMessage, Integer, String> {
+		
 		@Override
 		protected String doInBackground(OSCMessage... toSend) {
 			try {
-				c.send(toSend[0]);
-				Log.i(TAG, "OSC Message sent successfully");
-				return "Message sent";
+				AndromeApplication androme = (AndromeApplication) superActivity.getApplication();
+				try {
+					OSCServer osc = androme.getOSCServer();
+					osc.send(toSend[0], androme.getTransmitAddress());
+					Log.i(TAG, "OSC Message sent successfully");
+					return "Message sent";
+				} catch (Exception e) {
+					e.printStackTrace();
+					Log.e(TAG, "Failure to send message");
+					return "Failed to send message";
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
-				Log.e(TAG, "Failure to send message");
+				Log.e(TAG, "Failed to access Application from inside the View");
 				return "Failed to send message";
 			}
 		}
