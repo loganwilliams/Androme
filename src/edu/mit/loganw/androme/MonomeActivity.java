@@ -25,6 +25,8 @@ public class MonomeActivity extends Activity {
         
         monome = (MonomeView) findViewById(R.id.monome_grid);
         monome.setActivity(this);
+        
+        startService(new Intent(this, ListenerService.class));
     }
     
     @Override

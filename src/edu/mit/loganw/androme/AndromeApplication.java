@@ -61,5 +61,6 @@ public class AndromeApplication extends Application implements OnSharedPreferenc
 		SharedPreferences sharedPreferences, String key) { // 
 		
 		this.osc = null;
+		this.transmitAddress = null;
 	}
 }
