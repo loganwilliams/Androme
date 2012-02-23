@@ -20,7 +20,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 
 import de.sciss.net.OSCMessage;
-import de.sciss.net.OSCClient;
+import de.sciss.net.OSCTransmitter;
 import de.sciss.net.OSCServer;
 
 public class MonomeView extends View{
@@ -161,21 +161,26 @@ public class MonomeView extends View{
 		
 		@Override
 		protected String doInBackground(OSCMessage... toSend) {
+			AndromeApplication androme = (AndromeApplication) superActivity.getApplication();
+			
 			try {
-				AndromeApplication androme = (AndromeApplication) superActivity.getApplication();
+				OSCTransmitter osct = androme.getOSCTransmitter();
+				
 				try {
-					OSCServer osc = androme.getOSCServer();
-					osc.send(toSend[0], androme.getTransmitAddress());
-					Log.i(TAG, "OSC Message sent successfully");
-					return "Message sent";
-				} catch (Exception e) {
-					e.printStackTrace();
-					Log.e(TAG, "Failure to send message");
-					return "Failed to send message";
+					osct.connect();
+				} catch (IOException e) {
+					Log.e(TAG, "Could not connect to remote computer");
 				}
+				
+				osct.send(toSend[0]);
+				Log.i(TAG, "OSC Message sent successfully");
+				return "Message sent";
 			} catch (Exception e) {
-				e.printStackTrace();
-				Log.e(TAG, "Failed to access Application from inside the View");
+				// keeps throwing a NullPointerException
+				// i have no idea where this comes from.
+				
+				Log.e(TAG, e.toString());
+				Log.e(TAG, "Failure to send message");
 				return "Failed to send message";
 			}
 		}

@@ -1,8 +1,10 @@
 package edu.mit.loganw.androme;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import de.sciss.net.OSCServer;
+import de.sciss.net.OSCReceiver;
+import de.sciss.net.OSCTransmitter;
 import android.app.Application;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -14,8 +16,19 @@ public class AndromeApplication extends Application implements OnSharedPreferenc
 	private static final String TAG = AndromeApplication.class.getSimpleName();
 	private SharedPreferences prefs;
 	
-	public OSCServer osc = null;
+	public OSCReceiver oscr = null;
+	public OSCTransmitter osct = null;
 	public InetSocketAddress transmitAddress = null;
+	
+	private boolean serviceRunning;
+
+	public boolean isServiceRunning() { // 
+		return serviceRunning;
+	}
+
+	public void setServiceRunning(boolean serviceRunning) { // 
+		this.serviceRunning = serviceRunning;
+	}
 	
 	@Override
 	public void onCreate() {
@@ -28,22 +41,46 @@ public class AndromeApplication extends Application implements OnSharedPreferenc
 	@Override
 	public void onTerminate() { // 
 		super.onTerminate();
+		
 		Log.i(TAG, "onTerminated");
 	}
 	
-	public synchronized OSCServer getOSCServer() {
-		if (this.osc == null) {
+	public synchronized OSCReceiver getOSCReceiver() {
+		if (this.oscr == null) {
 			String listenPort = this.prefs.getString("listenPort", "");
+			
+			if (listenPort == null || listenPort == "") {
+				listenPort = "8000";
+			}
 			
 			// create a new osc server
 			try {
-				osc = OSCServer.newUsing("UDP", Integer.parseInt(listenPort));
+				oscr = OSCReceiver.newUsing(OSCReceiver.UDP, Integer.parseInt(listenPort));
 			} catch (Exception e) {
-				Log.e(TAG, "An error occured while creating the OSC Server");
+				Log.e(TAG, "An error occured while creating the OSC receiver");
 			}
 		}
 		
-		return this.osc;
+		return this.oscr;
+	}
+	
+	public synchronized OSCTransmitter getOSCTransmitter() {
+		if (this.osct == null) {
+			if (this.transmitAddress == null) {
+				String serverIP = this.prefs.getString("transmitServer", "");
+				String serverPort = this.prefs.getString("transmitPort", "");
+				
+				this.transmitAddress = new InetSocketAddress(serverIP, Integer.parseInt(serverPort));
+			}
+			
+			try {
+				osct = OSCTransmitter.newUsing(OSCTransmitter.UDP, this.transmitAddress);
+			} catch (IOException e) {
+				Log.e(TAG, "An error occured while creating the OSC transmitter");
+			}
+		}
+		
+		return this.osct;
 	}
 	
 	public synchronized InetSocketAddress getTransmitAddress() {
@@ -60,7 +97,8 @@ public class AndromeApplication extends Application implements OnSharedPreferenc
 	public synchronized void onSharedPreferenceChanged(
 		SharedPreferences sharedPreferences, String key) { // 
 		
-		this.osc = null;
+		this.oscr = null;
+		this.osct = null;
 		this.transmitAddress = null;
 	}
 }

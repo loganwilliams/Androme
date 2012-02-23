@@ -431,6 +431,10 @@ implements OSCChannel
 		this.target	= target;
 	}
 	
+	public SocketAddress getTarget () {
+		return this.target;
+	}
+	
 	public void setCodec( OSCPacketCodec c )
 	{
 		this.c	= c;

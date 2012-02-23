@@ -3,6 +3,7 @@ package edu.mit.loganw.androme;
 import java.net.SocketAddress;
 
 import de.sciss.net.OSCMessage;
+import de.sciss.net.OSCReceiver;
 import de.sciss.net.OSCServer;
 import de.sciss.net.OSCListener;
 import android.app.Service;
@@ -12,10 +13,8 @@ import android.util.Log;
 
 public class ListenerService extends Service {
 	static final String TAG = "ListenerService";
-	
-	private boolean runFlag = false;
-	
-	OSCServer osc;
+		
+	OSCReceiver oscr;
 	AndromeApplication androme;
 
 	private ListenerThread listener;
@@ -37,26 +36,32 @@ public class ListenerService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) { // 
 		androme = (AndromeApplication) getApplication();
-		osc = androme.getOSCServer();
+		oscr = androme.getOSCReceiver();
 		
 		super.onStartCommand(intent, flags, startId);
 		Log.d(TAG, "onStarted");
 		
 		this.listener.start();
+		this.androme.setServiceRunning(true);
 		
-		runFlag = true;
-		
+		this.listener.giveOSCReceiver(oscr);
+				
 		return START_STICKY;
 	}
 
 	@Override
 	public void onDestroy() { // 
 		super.onDestroy();
+		
+		this.listener.interrupt();
+		this.listener = null;
+		
+		this.androme.setServiceRunning(false);
 		Log.d(TAG, "onDestroyed");
 	}
 	
 	private class ListenerThread extends Thread {
-		private OSCServer osc;
+		private OSCReceiver oscr = null;
 		private AndromeListener listener;
 		
 		public ListenerThread() {
@@ -70,9 +75,9 @@ public class ListenerService extends Service {
 			// do nothing
 		}
 		
-		public void giveOSCServer(OSCServer osc) {
-			this.osc = osc;
-			osc.addOSCListener(listener);
+		public void giveOSCReceiver(OSCReceiver osc) {
+			this.oscr = osc;
+			this.oscr.addOSCListener(this.listener);
 		}
 		
 		private class AndromeListener implements OSCListener {
