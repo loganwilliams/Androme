@@ -14,7 +14,6 @@ import android.util.Log;
 public class ListenerService extends Service {
 	static final String TAG = "ListenerService";
 		
-	OSCReceiver oscr;
 	AndromeApplication androme;
 
 	private ListenerThread listener;
@@ -29,22 +28,19 @@ public class ListenerService extends Service {
 		super.onCreate();
 		
 		this.listener = new ListenerThread();
+		androme = (AndromeApplication) getApplication();
 		
 		Log.d(TAG, "onCreated");
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) { // 
-		androme = (AndromeApplication) getApplication();
-		oscr = androme.getOSCReceiver();
 		
 		super.onStartCommand(intent, flags, startId);
 		Log.d(TAG, "onStarted");
 		
 		this.listener.start();
 		this.androme.setServiceRunning(true);
-		
-		this.listener.giveOSCReceiver(oscr);
 				
 		return START_STICKY;
 	}
@@ -67,7 +63,6 @@ public class ListenerService extends Service {
 		public ListenerThread() {
 			super("ListenerService-Listener");
 			ListenerService listenerService = ListenerService.this;
-			listener = new AndromeListener();
 		}
 		
 		@Override
@@ -75,9 +70,24 @@ public class ListenerService extends Service {
 			// do nothing
 		}
 		
-		public void giveOSCReceiver(OSCReceiver osc) {
-			this.oscr = osc;
-			this.oscr.addOSCListener(this.listener);
+		@Override
+		public void start() {
+			super.start();
+			androme = (AndromeApplication) getApplication();
+			
+			try {
+				oscr = OSCReceiver.newUsing(OSCReceiver.UDP, androme.getListenPort());
+				
+				listener = new AndromeListener();
+				
+				oscr.addOSCListener(listener);
+				oscr.startListening();
+				
+				Log.i(TAG, "Created OSC listner");
+			} catch (Exception e) {
+				e.printStackTrace();
+				Log.e(TAG, "Could not create OSC Listener!");
+			}
 		}
 		
 		private class AndromeListener implements OSCListener {

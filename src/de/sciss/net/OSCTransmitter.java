@@ -698,10 +698,10 @@ implements OSCChannel
 					byteBuf.flip();
 
 					if( dumpMode != kDumpOff ) {
-						printStream.print( "s: " );
-						if( (dumpMode & kDumpText) != 0 ) OSCPacket.printTextOn( printStream, p );
+						//printStream.print( "s: " );
+						//if( (dumpMode & kDumpText) != 0 ) OSCPacket.printTextOn( printStream, p );
 						if( (dumpMode & kDumpHex)  != 0 ) {
-							OSCPacket.printHexOn( printStream, byteBuf );
+							//OSCPacket.printHexOn( printStream, byteBuf );
 							byteBuf.flip();
 						}
 					}

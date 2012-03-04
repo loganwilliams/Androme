@@ -19,6 +19,7 @@ import android.os.Message;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
+import de.sciss.net.OSCClient;
 import de.sciss.net.OSCMessage;
 import de.sciss.net.OSCTransmitter;
 import de.sciss.net.OSCServer;
@@ -106,7 +107,8 @@ public class MonomeView extends View{
 		
 		int x = (int) ev.getX();
 		int y = (int) ev.getY();
-		float pressure = ev.getPressure();
+		// pressure is fairly useless (like 2 bits of information that was barely usable)
+		//float pressure = ev.getPressure();
 		
 		// debug, remove
 		gridLit[(int) x/cellSize][(int) y/cellSize] = true;
@@ -114,11 +116,11 @@ public class MonomeView extends View{
 		
 		switch (action & MotionEvent.ACTION_MASK) {
 		case MotionEvent.ACTION_DOWN: {
-			sendTouchOSC(x, y, pressure);
+			sendTouchOSC(x, y, 1);
 		}
 		case MotionEvent.ACTION_POINTER_DOWN: {
 			// this is for multitouch events
-			sendTouchOSC(x, y, pressure);
+			sendTouchOSC(x, y, 1);
 		}
 		case MotionEvent.ACTION_MOVE: {
 			// find what pointer this refers to
@@ -136,7 +138,7 @@ public class MonomeView extends View{
 				}
 			}
 			
-			sendTouchOSC(x, y, pressure);
+			sendTouchOSC(x, y, 1);
 		}
 		case MotionEvent.ACTION_UP: {
 			sendTouchOSC(x, y, 0);
@@ -164,25 +166,28 @@ public class MonomeView extends View{
 			AndromeApplication androme = (AndromeApplication) superActivity.getApplication();
 			
 			try {
-				OSCTransmitter osct = androme.getOSCTransmitter();
+				OSCTransmitter osct = OSCTransmitter.newUsing(OSCTransmitter.UDP);
+				osct.setTarget(androme.getTransmitAddress());
+				osct.connect();
 				
 				try {
-					osct.connect();
-				} catch (IOException e) {
-					Log.e(TAG, "Could not connect to remote computer");
+					osct.send(toSend[0]);
+					Log.i(TAG, "OSC Message sent successfully");
+				} catch (Exception e) {
+					e.printStackTrace();
+					Log.e(TAG, "Failure to send message");
+					return "Failed to send message";
 				}
 				
-				osct.send(toSend[0]);
-				Log.i(TAG, "OSC Message sent successfully");
+				osct.dispose();
 				return "Message sent";
-			} catch (Exception e) {
-				// keeps throwing a NullPointerException
-				// i have no idea where this comes from.
 				
-				Log.e(TAG, e.toString());
-				Log.e(TAG, "Failure to send message");
-				return "Failed to send message";
+			} catch (Exception e) {
+				e.printStackTrace();
+				Log.e(TAG, "Could not create OSC Transmitter");
+				return "fail";
 			}
+
 		}
 		
 	    // Called when there's a status to be updated
